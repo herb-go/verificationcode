@@ -7,6 +7,8 @@ import (
 	"github.com/herb-go/verificationcode"
 )
 
+const DefaultStatusFail = 422
+
 type Engine struct {
 	Field      string
 	StatusFail int
@@ -39,9 +41,7 @@ func (e *Engine) ActionResponse(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	if !resp.IsSuccess() {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	}
+
 	contenttype := ""
 	switch resp.Type {
 	case verificationcode.ResponseTypeText:
@@ -57,6 +57,13 @@ func (e *Engine) ActionResponse(w http.ResponseWriter, r *http.Request) {
 	}
 	if contenttype != "" {
 		w.Header().Set("Content-Type", contenttype)
+	}
+	if !resp.IsSuccess() {
+		status := e.StatusFail
+		if status == 0 {
+			status = DefaultStatusFail
+		}
+		w.WriteHeader(status)
 	}
 	_, err = w.Write(resp.Body)
 	if err != nil {
