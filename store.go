@@ -1,7 +1,7 @@
 package verificationcode
 
 type Store interface {
-	Save(key string, data []byte) error
-	Load(key string) ([]byte, error)
+	Save(data []byte) error
+	Load() ([]byte, error)
 	Clean() error
 }
