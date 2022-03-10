@@ -1,13 +1,15 @@
 package verificationcode
 
 type Context struct {
-	Store  Store
-	Client *Client
+	Options *Options
+	Store   Store
+	Client  *Client
 }
 
-func CreateContext(user string, store Store, client *Client) *Context {
+func CreateContext(store Store, client *Client, opt *Options) *Context {
 	return &Context{
-		Store:  store,
-		Client: client,
+		Options: opt,
+		Store:   store,
+		Client:  client,
 	}
 }

@@ -17,8 +17,8 @@ type Client struct {
 	Context context.Context
 }
 
-func (c *Client) CreateContext(user string, store Store) *Context {
-	return CreateContext(user, store, c)
+func (c *Client) CreateContext(store Store, opt *Options) *Context {
+	return CreateContext(store, c, opt)
 }
 func (c *Client) GetMetaValue(key string) string {
 	if c.Meta == nil {

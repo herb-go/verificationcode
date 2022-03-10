@@ -16,6 +16,9 @@ type Engine struct {
 	Service    verificationcode.Service
 }
 
+func (e *Engine) NewOptions() *verificationcode.Options {
+	return verificationcode.NewOptions()
+}
 func (e *Engine) CreateStore(req *http.Request) *Store {
 	return &Store{
 		req:     req,
@@ -23,36 +26,37 @@ func (e *Engine) CreateStore(req *http.Request) *Store {
 		field:   e.Field,
 	}
 }
-func (e *Engine) CreateContext(r *http.Request, user string) *verificationcode.Context {
+func (e *Engine) CreateContext(r *http.Request, opt *verificationcode.Options) *verificationcode.Context {
 	var m = make(map[string]string, len(r.Header))
 	for k := range r.Header {
 		m[strings.ToLower(k)] = r.Header.Get(k)
 	}
 	return verificationcode.CreateContext(
-		user,
 		e.CreateStore(r),
 		verificationcode.ClientTypeWeb.CreateClient(r.RemoteAddr, r.Context()).MergeMeta(m),
+		opt,
 	)
 }
 
-func (e *Engine) ActionResponse(w http.ResponseWriter, r *http.Request) {
-	ctx := e.CreateContext(r, "")
-	resp, err := e.Service.Response(ctx, false)
+func (e *Engine) ActionChallenge(w http.ResponseWriter, r *http.Request) {
+	opt := e.NewOptions()
+	ctx := e.CreateContext(r, opt)
+	resp, err := e.Service.Challenge(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	contenttype := ""
 	switch resp.Type {
-	case verificationcode.ResponseTypeText:
+	case verificationcode.ChallengeTypeText:
 		contenttype = "text/plain"
-	case verificationcode.ResponseTypeBinary:
+	case verificationcode.ChallengeTypeBinary:
 		contenttype = "application/octet-stream"
-	case verificationcode.ResponseTypeJSON:
+	case verificationcode.ChallengeTypeJSON:
 		contenttype = "application/json"
-	case verificationcode.ResponseTypeJPEG:
+	case verificationcode.ChallengeTypeJPEG:
 		contenttype = "image/jpeg"
-	case verificationcode.ResponseTypePNG:
+	case verificationcode.ChallengeTypePNG:
 		contenttype = "image/png"
 	}
 	if contenttype != "" {
@@ -69,4 +73,9 @@ func (e *Engine) ActionResponse(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (e *Engine) ResponseRequest(req *http.Request, opt *verificationcode.Options, code []byte) (result *verificationcode.Result, err error) {
+	ctx := e.CreateContext(req, opt)
+	return e.Service.Response(ctx, code)
 }

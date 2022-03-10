@@ -1,6 +1,6 @@
 package verificationcode
 
 type Service interface {
-	Response(ctx *Context, refresh bool) (response *Response, err error)
-	Challenge(ctx *Context, code []byte) (result *Result, err error)
+	Challenge(ctx *Context) (challenge *Challenge, err error)
+	Response(ctx *Context, code []byte) (result *Result, err error)
 }
