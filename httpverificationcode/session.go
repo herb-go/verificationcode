@@ -2,6 +2,8 @@ package httpverificationcode
 
 import "net/http"
 
+var DefaultSessionField = "verificationcode"
+
 type Session interface {
 	// Set set session by field name with given value.
 	Set(r *http.Request, fieldname string, data []byte) error

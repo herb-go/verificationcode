@@ -10,10 +10,10 @@ import (
 const DefaultStatusFail = 422
 
 type Engine struct {
-	Field      string
-	StatusFail int
-	Session    Session
-	Service    verificationcode.Service
+	SessionField string
+	StatusFail   int
+	Session      Session
+	Service      verificationcode.Service
 }
 
 func (e *Engine) NewOptions() *verificationcode.Options {
@@ -23,7 +23,7 @@ func (e *Engine) CreateStore(req *http.Request) *Store {
 	return &Store{
 		req:     req,
 		session: e.Session,
-		field:   e.Field,
+		field:   e.SessionField,
 	}
 }
 func (e *Engine) CreateContext(r *http.Request, opt *verificationcode.Options) *verificationcode.Context {
@@ -37,15 +37,28 @@ func (e *Engine) CreateContext(r *http.Request, opt *verificationcode.Options) *
 		opt,
 	)
 }
-
-func (e *Engine) ActionChallenge(w http.ResponseWriter, r *http.Request) {
+func (e *Engine) MustLoadOptions(r *http.Request) *verificationcode.Options {
+	err := r.ParseForm()
+	if err != nil {
+		panic(err)
+	}
 	opt := e.NewOptions()
+	opt.User = r.Form.Get("user")
+	opt.Scene = r.Form.Get("scene")
+	opt.Reset = (r.Form.Get("reset") != "")
+	return opt
+}
+func (e *Engine) ActionChallenge(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+	opt := e.MustLoadOptions(r)
 	ctx := e.CreateContext(r, opt)
 	resp, err := e.Service.Challenge(ctx)
 	if err != nil {
 		panic(err)
 	}
-
 	contenttype := ""
 	switch resp.Type {
 	case verificationcode.ChallengeTypeText:
